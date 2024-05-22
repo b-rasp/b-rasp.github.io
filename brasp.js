@@ -87,6 +87,8 @@ class BRASP {
                     let result = math.evaluate(expression, localScope);
                     my_trace.push(result);
                 }
+                // make sure true and false are represented as 1 and 0
+                my_trace = my_trace.map(x => x === true ? 1 : 0);
                 trace[operation.name] = my_trace;
             }
             if (operation instanceof AttentionOperation) {
@@ -104,8 +106,6 @@ class BRASP {
                     let function_operation = trace[function_name];
                     scope[function_name] = function_operation;
                 }
-
-
                 // first append the mask to the score expression
                 score_expression = "(" + score_expression + ") & (" + mask + ")";
                 // take care since some functions take i as input and some take j
@@ -254,7 +254,9 @@ class BooleanOperation {
     }
 
     stringify() {
-        return this.name + "(i) := " + this.expression;
+        // replace "not" with "!"
+        let expression = this.expression.replace(/not /g, "!");
+        return this.name + "(i) := " + expression;
     }
 
     head() {
@@ -262,7 +264,8 @@ class BooleanOperation {
     }
 
     body() {
-        return this.expression;
+        let expression = this.expression.replace(/not /g, "!");
+        return expression;
     }
 }
 
@@ -369,7 +372,10 @@ class AttentionOperation {
     }
 
     stringify() {
-        return this.name + "(i) := " + this.tie + " [" + this.mask + ", " + this.score_expression + "] " + this.value_expression + " : " + this.default_expression;
+        let score_expression = this.score_expression.replace(/not /g, "!");
+        let value_expression = this.value_expression.replace(/not /g, "!");
+        let default_expression = this.default_expression.replace(/not /g, "!");
+        return this.name + "(i) := " + this.tie + " [" + this.mask + ", " + score_expression + "] " + value_expression + " : " + default_expression;
     }
 
     head() {
@@ -377,6 +383,9 @@ class AttentionOperation {
     }
 
     body() {
-        return this.tie + " [" + this.mask + ", " + this.score_expression + "] " + this.value_expression + " : " + this.default_expression;
+        let score_expression = this.score_expression.replace(/not /g, "!");
+        let value_expression = this.value_expression.replace(/not /g, "!");
+        let default_expression = this.default_expression.replace(/not /g, "!");
+        return this.tie + " [" + this.mask + ", " + score_expression + "] " + value_expression + " : " + default_expression;
     }
 }
