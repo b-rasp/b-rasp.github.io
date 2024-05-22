@@ -1,13 +1,70 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.84.0">
     <title>B-RASP Simulator</title>
+
+    <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/navbar-fixed/">
+
+    <!-- Bootstrap core CSS -->
+    <link href="assets/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+    </style>
+
+    <!-- B-RASP styles -->
     <link rel="stylesheet" href="brasp.css">
     <script src="https://unpkg.com/mathjs@12.4.2/lib/browser/math.js" type="text/javascript"></script>
+
+    <!-- Custom styles for this template -->
+    <link href="navbar-top-fixed.css" rel="stylesheet">
 </head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">B-RASP Simulator</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="dropdown10" data-bs-toggle="dropdown"
+                            aria-expanded="true">Load Preset</a>
+                        <ul class="dropdown-menu" aria-labelledby="dropdown10" data-bs-popper="none">
+                            <li><a class="dropdown-item" href="#" onclick="addDyck1_depth2()">Dyck-1 of Depth 2</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="addStair3()">Stair_3</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="add_ab_plus()">(ab)^+</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="addBprecAnosuccC()">{a,b,c}^*a{b,c}^*ba^*</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <script src="assets/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 
 <body>
     <!-- math -->
@@ -16,8 +73,8 @@
     <script src="https://unpkg.com/ohm-js@17/dist/ohm.js"></script>
     <!-- brasp -->
     <script src="brasp.js" type="text/javascript"></script>
-
-    <div style="display: flex; flex-direction: row;">
+    <div style="display: flex; flex-direction: row; justify-content: center;">
+        <!-- operations panel -->
         <div style="display: flex; flex-direction: column; align-items: center;">
             <div style="display: flex; justify-content: center;">
                 <div id="controls">
@@ -31,21 +88,12 @@
                         </div>
                     </div>
                     <div class="panel">
-                        <h2>Load preset</h2>
-                        <!-- Have a dropdown for presets including Dyck, and an "add" button to add -->
-                        <select id="presets">
-                            <option value="dyck">Dyck-1 of Depth 2</option>
-                            <option value="stair3">Stair_3</option>
-                            <option value="ab_plus">(ab)^+</option>
-                            <option value="BprecAnosuccC">{a,b,c}^*a{b,c}^*ba^*</option>
-                        </select>
-                        <button onclick="loadPreset()">Load</button>
-                    </div>
-                    <div class="panel">
                         <h2>Write program</h2>
                         <p class="instruction">Please write Boolean expressions using the operators <code>!</code>
-                            (not), <code>&</code> (and), <code>|</code> (or).</p>
-                        <textarea id="programInput" rows="11" style="width: 95%;"></textarea>
+                            (not),
+                            <code>&</code> (and), <code>|</code> (or).
+                        </p>
+                        <textarea id="programInput" rows="15" style="width: 100%;"></textarea>
                         <p>
                             <button onclick="compileProgram()">Compile</button>
                         </p>
@@ -57,7 +105,9 @@
                             <!-- <label for=" initial-symbol">Symbol:</label> -->
                             Q_<input type="text" id="initial-symbol" style="width: 20px;">(i)
                             <p>
+                            <p>
                                 <button onclick="addInitialOperation()">Add</button>
+                            </p>
                             </p>
                         </div>
                         <div class="subpanel">
@@ -67,7 +117,9 @@
                             <!-- <label for="boolean-expression">Expression:</label> -->
                             <input type="text" id="boolean-expression" style="width: 100px;">
                             <p>
+                            <p>
                                 <button onclick="addBooleanOperation()">Add</button>
+                            </p>
                             </p>
                         </div>
                         <div class="subpanel">
@@ -94,30 +146,33 @@
                             <!-- <label for="default-expression">Default:</label> -->
                             <input type="text" id="default-expression" style="width: 100px;">
                             <p>
+                            <p>
                                 <button onclick="addAttentionOperation()">Add</button>
+                            </p>
                             </p>
                         </div>
                     </div> <!-- operations panel -->
                 </div>
             </div>
         </div>
-        <div style="display: flex; flex-direction: column; align-items: center;">
-            <div style="display: flex; flex-direction: row;">
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    <div class="grid-container remove-column" id="editContainer"></div>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    <div class="grid-container operation-column" id="programContainer"></div>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    <div class="grid-container vector-column" id="gridContainer"></div>
+        <div style="align-items:center;">
+            <div style="display: flex; flex-direction: row; align-items:center;">
+                <div style=" display: flex; flex-direction: row; align-items: center;">
+                    <div style="display: flex; flex-direction: row; align-items: center;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="grid-container remove-column" id="editContainer"></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="grid-container operation-column" id="programContainer"></div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="grid-container vector-column" id="gridContainer"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-
-
 
     <script type="text/javascript">
         // Create a new BRASP instance
@@ -527,77 +582,77 @@
         const myGrammar = ohm.grammar(String.raw
             `BRASP{
 
-            Operation
-            = BooleanOp
-            | AttentionOp
-            | InitialOp
+        Operation
+        = BooleanOp
+        | AttentionOp
+        | InitialOp
 
-            BoolExp
-            = AndBool
-            | OrBool
-            | NotBool
-            | ParenBool
-            | FunBool
-            | Top
-            | Bot
+        BoolExp
+        = AndBool
+        | OrBool
+        | NotBool
+        | ParenBool
+        | FunBool
+        | Top
+        | Bot
 
-            AndBool = BoolExp "&" BoolExp
+        AndBool = BoolExp "&" BoolExp
 
-            OrBool = BoolExp "|" BoolExp
+        OrBool = BoolExp "|" BoolExp
 
-            NotBool = "!" BoolExp
+        NotBool = "!" BoolExp
 
-            Top = "1"
+        Top = "1"
 
-            Bot = "0"
+        Bot = "0"
 
-            ParenBool = "(" BoolExp ")"
+        ParenBool = "(" BoolExp ")"
 
-            FunBool
-            = (lower | upper | digit | "_")+ "(i)"
-            | (lower | upper | digit | "_")+ "(j)"
+        FunBool
+        = (lower | upper | digit | "_")+ "(i)"
+        | (lower | upper | digit | "_")+ "(j)"
 
-            InitialOp = "Q_" (letter|digit) "(i)"
+        InitialOp = "Q_" (letter|digit) "(i)"
 
-            BooleanOp = (lower | upper | digit | "_")+  "(i)" ":=" BoolExp
+        BooleanOp = (lower | upper | digit | "_")+  "(i)" ":=" BoolExp
 
-            AttentionOp
-            = (lower | upper | digit | "_")+  "(i)" ":=" Tiebreaker "[" Mask "," Score "]" Value ":" DefaultExp
+        AttentionOp
+        = (lower | upper | digit | "_")+  "(i)" ":=" Tiebreaker "[" Mask "," Score "]" Value ":" DefaultExp
 
-            Tiebreaker
-            = "leftmost"
-            | "rightmost"
+        Tiebreaker
+        = "leftmost"
+        | "rightmost"
 
-            Mask
-            = "j<i"
-            | "i<j"
-            | "j<=i"
-            | "i<=j"
-            | "1"
+        Mask
+        = "j<i"
+        | "i<j"
+        | "j<=i"
+        | "i<=j"
+        | "1"
 
-            Score = BoolExp
+        Score = BoolExp
 
-            Value = BoolExp
+        Value = BoolExp
 
-            DefaultExp
-            = AndBool
-            | OrBool
-            | NotBool
-            | ParenBool
-            | FunDefault
-            | Top
-            | Bot
+        DefaultExp
+        = AndBool
+        | OrBool
+        | NotBool
+        | ParenBool
+        | FunDefault
+        | Top
+        | Bot
 
-            AndDefault = DefaultExp "&" DefaultExp
+        AndDefault = DefaultExp "&" DefaultExp
 
-            OrDefault = DefaultExp "|" DefaultExp
+        OrDefault = DefaultExp "|" DefaultExp
 
-            NotDefault = "!" DefaultExp
+        NotDefault = "!" DefaultExp
 
-            ParenDefault = "(" DefaultExp ")"
+        ParenDefault = "(" DefaultExp ")"
 
-            FunDefault = (lower | upper | digit | "_")+  "(i)"
-            }`
+        FunDefault = (lower | upper | digit | "_")+  "(i)"
+        }`
         );
 
         const semantics = myGrammar.createSemantics().addOperation('eval', {
@@ -712,6 +767,7 @@
             syncGrid(inputBox);
         }
     </script>
+
 
 </body>
 
