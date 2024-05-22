@@ -1,757 +1,391 @@
-<!DOCTYPE html>
-<html lang="en">
+class BRASP {
+    constructor() {
+        this.operations = [];
+        this.operation_names = [];
+    }
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B-RASP Simulator</title>
-    <style>
-        :root {
-            --num-rows: 3;
+    // Method to add a new boolean operation
+    addOperation(operation) {
+        this.operations.push(operation);
+    }
+
+    // Method to remove an operation
+    removeOperation(operation) {
+        this.operations = this.operations.filter(op => op !== operation);
+    }
+
+    // Method to remove an operation by name
+    removeOperationByName(name) {
+        this.operations = this.operations.filter(op => op.name !== name);
+    }
+
+    clearOperations() {
+        this.operations = [];
+    }
+
+    // Method to get the list of operations
+    getOperations() {
+        return this.operations;
+    }
+
+    // Method to get the list of operation names
+    getOperationNames() {
+        return this.operations.map(op => op.name);
+    }
+
+    // Method to execute the operations on an input
+    execute(input) {
+        // Make sure input is a list of strings
+        if (!Array.isArray(input)) {
+            throw new Error('Input must be a list of strings');
         }
+        // get length of input
+        let n = input.length;
 
-        .grid-container {
-            display: grid;
-            gap: 0;
-            grid-auto-flow: column;
-            grid-template-columns: repeat(auto-fill, minmax(min-content, 1fr));
-            grid-template-rows: repeat(var(--num-rows), 30px);
-            overflow-x: auto;
-            width: fit-content;
-        }
+        // create a dictionary to store the trace of each operation over the input
+        let trace = {};
 
-        .grid-item {
-            background-color: #f2f2f2;
-            padding: 5px;
-            border: 1px solid #ccc;
-            text-align: center;
-            white-space: nowrap;
-            grid-auto-flow: column;
-            display: inline-block;
-            min-width: 20px;
-        }
-
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        ::-webkit-scrollbar {
-            display: none;
-        }
-
-        /* Hide scrollbar for IE, Edge and Firefox */
-        html {
-            -ms-overflow-style: none;
-            /* IE and Edge */
-            scrollbar-width: none;
-            /* Firefox */
-        }
-
-        */
-    </style>
-    <script src="https://unpkg.com/mathjs@12.4.2/lib/browser/math.js" type="text/javascript"></script>
-</head>
-
-<body>
-    <!-- math -->
-    <script src="https://unpkg.com/mathjs@12.4.2/lib/browser/math.js" type="text/javascript"></script>
-    <!-- parser -->
-    <script src="https://unpkg.com/ohm-js@17/dist/ohm.js"></script>
-    <!-- brasp -->
-    <script src="brasp.js" type="text/javascript"></script>
-
-    <div style="display: flex; flex-direction: row;">
-        <div style="display: flex; flex-direction: column; align-items: center;">
-            <div style="display: flex; justify-content: center;">
-                <div style="text-align: left;  width:100%;">
-                    <div>
-                        Load Preset:
-                        <!-- Have a dropdown for presets including Dyck, and an "add" button to add -->
-                        <select id="presets">
-                            <option value="dyck">Dyck-1 of Depth 2</option>
-                            <option value="stair3">Stair_3</option>
-                            <option value="ab_plus">(ab)^+</option>
-                            <option value="BprecAnosuccC">{a,b,c}^*a{b,c}^*ba^*</option>
-                        </select>
-                        <button onclick="loadPreset()">Load</button>
-                    </div>
-                    <p>NOTE: the javascript parser uses "not", "&", and "|" as boolean operations. </p>
-                    <div>
-                        <div style="border:#ccc 1px solid; padding:10px;">
-                            <div style="display:flex;">
-                                <div style="font-size: 20px;">
-                                    Input:&nbsp;
-                                </div>
-                                <input type="text" id="inputBox" style="width: 400px; font-size: 20px;"
-                                    oninput="syncGrid(this)">
-                                <div style="font-size: 20px ; color:red;" id="recognition">
-                                    &nbsp;rejected
-                                </div>
-                            </div>
-                        </div>
-                        <div style="border:#ccc 1px solid; padding:10px;">
-                            <p><b>Write your program here, or use the templates below</b></p>
-                            <textarea id="programInput" rows="15" style="width: 100%;"></textarea>
-                            <p>
-                                <button onclick="compileProgram()">Compile Program</button>
-                            </p>
-                        </div>
-                        <div style="border:#ccc 1px solid; padding:5px;">
-                            <p> <b>Add an Initial Operation</b></p>
-                            <div style="padding:3px;">
-                                <!-- <label for=" initial-symbol">Symbol:</label> -->
-                                Q_<input type="text" id="initial-symbol" style="width: 20px;">(i)
-                                <p>
-                                    <button onclick="addInitialOperation()">Add Initial Operation</button>
-                                </p>
-                            </div>
-                        </div>
-                        <div style="border:#ccc 1px solid; padding:5px;">
-                            <p> <b>Add a Boolean Operation </b></p>
-                            <div style="padding:3px;">
-                                <!-- <label for="boolean-name">Name:</label> -->
-                                <input type="text" id="boolean-name" style="width: 20px;">(i) :=
-                                <!-- <label for="boolean-expression">Expression:</label> -->
-                                <input type="text" id="boolean-expression" style="width: 100px;">
-                                <p>
-                                    <button onclick="addBooleanOperation()">Add Boolean Operation</button>
-                                </p>
-                            </div>
-                        </div>
-                        <div style="border:#ccc 1px solid; padding:5px;">
-                            <p> <b>Add an Attention Operation</b></p>
-                            <div style="padding:3px;">
-                                <!-- <label for="attention-name">Name:</label> -->
-                                <input type="text" id="attention-name" style="width: 20px;">(i) :=
-                                <!-- <label for="attention-tie">Tie:</label> -->
-                                <select id="attention-tie">
-                                    <option value="rightmost">rightmost</option>
-                                    <option value="leftmost">leftmost</option>
-                                </select>
-                                <!-- <label for="attention-mask">Mask:</label> -->
-                                [<select id="attention-mask">
-                                    <option value="j<i">j &lt; i</option>
-                                    <option value="i<j">i &lt; j</option>
-                                    <option value="j<=i">j &lt;= i</option>
-                                    <option value="i<=j">i &lt;= j</option>
-                                    <option value="1">1</option>
-                                </select>,
-                                <!-- <label for="score-expression">Score:</label> -->
-                                <input type="text" id="score-expression" style="width: 100px;">]
-                                <!-- <label for="value-expression">Value:</label> -->
-                                <input type="text" id="value-expression" style="width: 100px;"> :
-                                <!-- <label for="default-expression">Default:</label> -->
-                                <input type="text" id="default-expression" style="width: 100px;">
-                                <p>
-                                    <button onclick="addAttentionOperation()">Add Attention Operation</button>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div style="display: flex; flex-direction: column; align-items: center;">
-            <div style="display: flex; flex-direction: row;">
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    <div class="grid-container" id="editContainer" style="width: 100px;"></div>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    <div class="grid-container" id="programContainer" style="width: 400px;"></div>
-                </div>
-                <div style="display: flex; flex-direction: column; align-items: center;">
-                    <div class="grid-container" id="gridContainer" style="width: 500px;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    </div>
-
-
-
-
-    <script type="text/javascript">
-        // Create a new BRASP instance
-        const brasp = new BRASP();
-
-        // set num-rows to the number of operations + 1
-        document.documentElement.style.setProperty('--num-rows', brasp.getOperations().length + 1);
-
-        function addDyck1_depth2() {
-            // clear the operations
-            clearOperations();
-            // add the initial operations
-            brasp.addOperation(new InitialOperation("l"));
-            addRow();
-            brasp.addOperation(new InitialOperation("r"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("P_l", "rightmost", "j<i", "1", "Q_l(j)", "0"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("S_r", "leftmost", "i<j", "1", "Q_r(j)", "0"));
-            addRow();
-            brasp.addOperation(new BooleanOperation("I", "(Q_l(i) & S_r(i)) | (P_l(i) & Q_r(i))"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("A_r", "leftmost", "i<j", "not I(j)", "Q_r(j)", "0"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("B_l", "rightmost", "j<i", "not I(j)", "Q_l(j)", "0"));
-            addRow();
-            brasp.addOperation(new BooleanOperation("C", "I(i) | (Q_l(i) & A_r(i)) | (Q_r(i) & B_l(i))"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("Y", "rightmost", "1", "not C(j)", "0", "1"));
-            addRow();
-
-            // sync the grid
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-            // sync the programInput box
-            const programInput = document.getElementById('programInput');
-            // for each operation, add operation.stringify() to the programInput
-            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-        }
-
-        function addStair3() {
-            // clear the operations
-            clearOperations();
-            // add the initial operations
-            brasp.addOperation(new InitialOperation("a"));
-            addRow();
-            brasp.addOperation(new InitialOperation("b"));
-            addRow();
-            brasp.addOperation(new InitialOperation("c"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("A_2", "rightmost", "j<i", "Q_a(j) | Q_b(j)", "Q_a(i) & Q_a(j)", "0"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("A_3", "rightmost", "j<i", "Q_a(j) | Q_b(j)", "Q_a(i) & A_2(j)", "0"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("Y", "rightmost", "1", "A_3(j)", "1", "0"));
-            addRow();
-            // sync the grid
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-            // sync the programInput box
-            const programInput = document.getElementById('programInput');
-            // for each operation, add operation.stringify() to the programInput
-            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-        }
-
-        function add_ab_plus() {
-            // clear the operations
-            clearOperations();
-            // add the initial operations
-            brasp.addOperation(new InitialOperation("a"));
-            addRow();
-            brasp.addOperation(new InitialOperation("b"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("AB", "rightmost", "j<i", "1", "Q_a(j) & Q_b(i)", "0"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("BA", "leftmost", "i<j", "1", "Q_a(i) & Q_b(j)", "0"));
-            addRow();
-            brasp.addOperation(new BooleanOperation("I", "AB(i) | BA(i)"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("Y", "rightmost", "1", "not I(j)", "0", "1"));
-            addRow();
-            // sync the grid
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-            // sync the programInput box
-            const programInput = document.getElementById('programInput');
-            // for each operation, add operation.stringify() to the programInput
-            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-        }
-
-        function addBprecAnosuccC() {
-            clearOperations();
-            // add the initial operations
-            brasp.addOperation(new InitialOperation("a"));
-            addRow();
-            brasp.addOperation(new InitialOperation("b"));
-            addRow();
-            brasp.addOperation(new InitialOperation("c"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("P_a", "rightmost", "j<i", "Q_a(j)", "1", "0"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("S_c", "leftmost", "i<j", "Q_c(j)", "1", "0"));
-            addRow();
-            brasp.addOperation(new BooleanOperation("I", "Q_b(i) & P_a(i) & not S_c(i)"));
-            addRow();
-            brasp.addOperation(new AttentionOperation("Y", "rightmost", "1", "I(j)", "1", "0"));
-            addRow();
-
-            // sync the grid
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-            // sync the programInput box
-            const programInput = document.getElementById('programInput');
-            // for each operation, add operation.stringify() to the programInput
-            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-        }
-
-        function loadPreset() {
-            const preset = document.getElementById('presets').value;
-            if (preset === 'dyck') {
-                addDyck1_depth2();
-            }
-            if (preset === 'stair3') {
-                addStair3();
-            }
-            if (preset === 'ab_plus') {
-                add_ab_plus();
-            }
-            if (preset === 'BprecAnosuccC') {
-                addBprecAnosuccC();
-            }
-        }
-
-        function syncGrid(input) {
-            // the program section
-            const editContainer = document.getElementById('editContainer');
-            editContainer.innerHTML = ''; // Clear the grid
-            const programContainer = document.getElementById('programContainer');
-            programContainer.innerHTML = ''; // Clear the grid
-            // add 5 empty items to populate all 5 rows
-            // TODO: make custom css classes so don't need to manually set borders each time
-            for (let j = 0; j < parseInt(getComputedStyle(document.documentElement).getPropertyValue('--num-rows')); j++) {
-                const newItem = document.createElement('div');
-                newItem.classList.add('grid-item');
-                if (j === 0) {
-                    const clearButton = document.createElement('button');
-                    clearButton.textContent = 'Clear All';
-                    clearButton.onclick = function () {
-                        clearOperations();
-                    };
-                    newItem.insertBefore(clearButton, newItem.firstChild);
-                    newItem.style.borderBottom = '2px solid black';
-                    newItem.style.borderRight = '2px solid black';
-                    // give each item an id, which is the row, column index
-                    newItem.id = `0-${j}`;
+        // iterate over all operations
+        for (let operation of this.operations) {
+            // check if operation is an initial operation
+            if (operation instanceof InitialOperation) {
+                // check if the symbol is in the input
+                let symbol = operation.symbol;
+                let my_trace = [];
+                // iterate over the input
+                // if the input has symbol at position i, set trace[i]=1, otherwise set trace[i]=0
+                for (let i = 0; i < n; i++) {
+                    if (input[i] === symbol) {
+                        my_trace.push(1);
+                    } else {
+                        my_trace.push(0);
+                    }
                 }
-                else {
-                    // if not the first row, add name of brasp operation
-                    newItem.style.borderRight = '2px solid black';
-                    // newItem.style.backgroundColor = brasp.getOperations()[j - 1].color;
-                    // add a button to remove the operation
-                    const removeButton = document.createElement('button');
-                    removeButton.textContent = 'Remove';
-                    removeButton.onclick = function () {
-                        brasp.removeOperationByName(brasp.getOperations()[j - 1].name);
-                        removeRow();
-                        const inputBox = document.getElementById('inputBox');
-                        syncGrid(inputBox);
-                        // sync the programInput box
-                        const programInput = document.getElementById('programInput');
-                        // for each operation, add operation.stringify() to the programInput
-                        programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-                    };
-                    newItem.insertBefore(removeButton, newItem.firstChild);
-                    // give each item an id, which is the row, column index
-                    newItem.id = `0-${j}`;
-                }
-                editContainer.appendChild(newItem);
+
+                // add the trace to the dictionary
+                trace[operation.name] = my_trace;
             }
-            for (let j = 0; j < parseInt(getComputedStyle(document.documentElement).getPropertyValue('--num-rows')); j++) {
-                const newItem = document.createElement('div');
-                newItem.classList.add('grid-item');
-                if (j === 0) {
-                    newItem.textContent = '';
-                    newItem.style.borderBottom = '2px solid black';
-                    newItem.style.borderRight = 'none';
-                    // give each item an id, which is the row, column index
-                    newItem.id = `0-${j}`;
+            if (operation instanceof BooleanOperation) {
+                // check if the variables in the expression are in the trace
+                let variables = operation.variables;
+                let functions = operation.functions;
+                let expression = operation.expression;
+                let my_trace = [];
+                let scope = {};
+                // set each function in the expression to use the according operation
+                for (let j = 0; j < functions.length; j++) {
+                    let function_name = functions[j];
+                    let function_operation = trace[function_name];
+                    scope[function_name] = function_operation;
                 }
-                else {
-                    // if not the first row, add name of brasp operation
-                    newItem.textContent = "\n" + brasp.getOperations()[j - 1].head();
-                    newItem.style.display = 'block';
-                    newItem.style.whiteSpace = 'nowrap'; // Keep text in a single line
-                    newItem.style.overflow = 'auto'; // Enable scrolling
-                    newItem.style.maxWidth = '300px'; // Set a maximum width
-                    newItem.style.borderLeft = 'none';
-                    newItem.style.borderRight = 'none';
-                    newItem.style.backgroundColor = brasp.getOperations()[j - 1].color;
-                    newItem.style.textAlign = 'right'; // add this line to align the text to the right
-                    // give each item an id, which is the row, column index
-                    newItem.id = `0-${j}`;
+                for (let i = 0; i < n; i++) {
+                    let localScope = {};
+                    for (let functionName in scope) {
+                        localScope[functionName] = scope[functionName][i];
+                    }
+                    expression = expression.replace(/([a-zA-Z0-9_]+)\s*\(\s*i\s*\)/g, '$1');
+                    let result = math.evaluate(expression, localScope);
+                    my_trace.push(result);
                 }
-                programContainer.appendChild(newItem);
+                // make sure true and false are represented as 1 and 0
+                my_trace = my_trace.map(x => x === true ? 1 : 0);
+                trace[operation.name] = my_trace;
             }
-
-            for (let j = 0; j < parseInt(getComputedStyle(document.documentElement).getPropertyValue('--num-rows')); j++) {
-                const newItem = document.createElement('div');
-                newItem.classList.add('grid-item');
-                if (j === 0) {
-                    newItem.textContent = '';
-                    newItem.style.borderBottom = '2px solid black';
-                    newItem.style.borderRight = 'none';
-                    newItem.style.borderLeft = 'none';
-                    newItem.style.minWidth = '0'; // set minimal width to 0
-                    // give each item an id, which is the row, column index
-                    newItem.id = `0-${j}`;
+            if (operation instanceof AttentionOperation) {
+                let score_expression = operation.score_expression;
+                let value_expression = operation.value_expression;
+                let default_expression = operation.default_expression;
+                let mask = operation.mask;
+                let tie = operation.tie;
+                let functions = operation.functions;
+                let my_trace = [];
+                let scope = {};
+                // set each function in the expression to use the according operation
+                for (let j = 0; j < functions.length; j++) {
+                    let function_name = functions[j];
+                    let function_operation = trace[function_name];
+                    scope[function_name] = function_operation;
                 }
-                else {
-                    // if not the first row, add name of brasp operation
-                    // if operation is an initial operation, don't put a := in front
-                    newItem.textContent = brasp.getOperations()[j - 1].type == "initial" ? "" : ":=";
-                    newItem.style.borderRight = 'none';
-                    newItem.style.backgroundColor = brasp.getOperations()[j - 1].color;
-                    newItem.style.textAlign = 'center'; // add this line to align the text to the right
-                    newItem.style.minWidth = '0'; // set minimal width to 0
-                    newItem.style.borderLeft = 'none'; // override the left border
-                    newItem.style.borderRight = 'none'; // override the right border
-                    // give each item an id, which is the row, column index
-                    newItem.id = `0-${j}`;
-                }
-                programContainer.appendChild(newItem);
-            }
-            for (let j = 0; j < parseInt(getComputedStyle(document.documentElement).getPropertyValue('--num-rows')); j++) {
-                const newItem = document.createElement('div');
-                newItem.classList.add('grid-item');
-                // newItem.style.display = 'inline-block';
-                if (j === 0) {
-                    newItem.textContent = '';
-                    newItem.style.borderBottom = '2px solid black';
-                    newItem.style.borderRight = '2px solid black';
-                    newItem.style.borderLeft = 'none';
-                    // give each item an id, which is the row, column index
-                    newItem.id = `0-${j}`;
-                }
-                else {
-                    // if not the first row, add name of brasp operation
-                    newItem.textContent = "\n" + brasp.getOperations()[j - 1].body();
-                    newItem.style.display = 'block';
-                    newItem.style.whiteSpace = 'nowrap'; // Keep text in a single line
-                    newItem.style.overflow = 'auto'; // Enable scrolling
-                    newItem.style.minWidth = '100px'; // Set a minimum width
-                    newItem.style.maxWidth = '400px'; // Set a maximum width
-                    newItem.style.textAlign = 'left'; // Align the text to the left
-                    newItem.style.borderLeft = 'none';
-                    newItem.style.borderRight = '2px solid black';
-                    newItem.style.backgroundColor = brasp.getOperations()[j - 1].color;
-                    // give each item an id, which is the row, column index
-                    newItem.id = `0-${j}`;
-                }
-                programContainer.appendChild(newItem);
-            }
+                // first append the mask to the score expression
+                score_expression = "(" + score_expression + ") & (" + mask + ")";
+                // take care since some functions take i as input and some take j
+                // use regex to replace f(i) with f_i and f(j) with f_j
 
+                score_expression = score_expression.replace(/([a-zA-Z0-9_]+)\s*\(\s*i\s*\)/g, '$1_i').replace(/([a-zA-Z0-9_]+)\s*\(\s*j\s*\)/g, '$1_j');
 
-            // the input section
-            const inputValue = input.value.trim();
-            // split the input value into an array of characters
-            inputList = inputValue.split('');
-            const gridContainer = document.getElementById('gridContainer');
-            gridContainer.innerHTML = ''; // Clear the grid
-            // if the input is empty, add empty rows to the grid
-            if (inputValue === '') {
-                const newColumn = document.createElement('div');
-                newColumn.classList.add('grid-item');
-                newColumn.style.borderBottom = '2px solid black';
-                newColumn.textContent = '';
-                gridContainer.appendChild(newColumn);
+                value_expression = value_expression.replace(/([a-zA-Z0-9_]+)\s*\(\s*i\s*\)/g, '$1_i').replace(/([a-zA-Z0-9_]+)\s*\(\s*j\s*\)/g, '$1_j');
 
-                // Add the rest of the items to populate the grid
-                for (let j = 0; j < parseInt(getComputedStyle(document.documentElement).getPropertyValue('--num-rows')) - 1; j++) {
-                    const newItem = document.createElement('div');
-                    newItem.classList.add('grid-item');
-                    newItem.textContent = '';
-                    newItem.style.backgroundColor = brasp.getOperations()[j].color;
-                    // give each item an id, which is the row, column index
-                    newItem.id = `${1}-${j}`;
-                    gridContainer.appendChild(newItem);
-                }
-            }
+                default_expression = default_expression.replace(/([a-zA-Z0-9_]+)\s*\(\s*i\s*\)/g, '$1_i');
 
-            // populate the grid with the input value
-            trace = brasp.execute(inputList);
-            operations_names = brasp.getOperations().map(operation => operation.name);
-            for (let i = 0; i < inputValue.length; i++) {
-                const newColumn = document.createElement('div');
-                newColumn.classList.add('grid-item');
-                newColumn.style.borderBottom = '2px solid black';
-                newColumn.textContent = inputValue[i];
-                gridContainer.appendChild(newColumn);
-
-                // Add the rest of the items to populate the grid
-                for (let j = 0; j < parseInt(getComputedStyle(document.documentElement).getPropertyValue('--num-rows')) - 1; j++) {
-                    const newItem = document.createElement('div');
-                    newItem.classList.add('grid-item');
-                    value = trace[operations_names[j]][i];
-                    newItem.textContent = value;
-                    newItem.style.backgroundColor = brasp.getOperations()[j].color;
-                    // give each item an id, which is the row, column index
-                    newItem.id = `${i + 1}-${j}`;
-                    gridContainer.appendChild(newItem);
-                }
-            }
-
-            // check if the input is accepted
-            // this is when last column of the last row of the grid is 1
-            // first check that the trace dictionary is not empty
-            if (Object.keys(trace).length > 0 && inputList.length > 0) {
-                // then check that the last column of the last row is 1
-                console.log(trace[operations_names[operations_names.length - 1]][inputList.length - 1]);
-                if (trace[operations_names[operations_names.length - 1]][inputList.length - 1] === 1) {
-
-                    console.log("accepted");
-                    document.getElementById('recognition').innerHTML = '&nbsp;accepted';
-                    document.getElementById('recognition').style.color = 'green';
-                }
-                else {
-                    console.log("rejected");
-                    document.getElementById('recognition').innerHTML = '&nbsp;rejected';
-                    document.getElementById('recognition').style.color = 'red';
-                }
-            }
-        }
-
-        function addRow() {
-            const root = document.documentElement;
-            root.style.setProperty('--num-rows', parseInt(getComputedStyle(root).getPropertyValue('--num-rows')) + 1);
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-        }
-
-        function removeRow() {
-            const root = document.documentElement;
-            // don't allow fewer than 1 row
-            if (parseInt(getComputedStyle(root).getPropertyValue('--num-rows')) > 1) {
-                root.style.setProperty('--num-rows', parseInt(getComputedStyle(root).getPropertyValue('--num-rows')) - 1);
-                const inputBox = document.getElementById('inputBox');
-                syncGrid(inputBox);
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', function () {
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-        });
-
-        function addInitialOperation() {
-            const initialSymbol = document.getElementById('initial-symbol').value;
-            const newInitialOperation = new InitialOperation(initialSymbol);
-            brasp.addOperation(newInitialOperation);
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-            addRow();
-
-            // sync the programInput box
-            const programInput = document.getElementById('programInput');
-            // for each operation, add operation.stringify() to the programInput
-            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-        }
-
-        function addBooleanOperation() {
-            const booleanExpression = document.getElementById('boolean-expression').value;
-            const booleanName = document.getElementById('boolean-name').value;
-            const newBooleanOperation = new BooleanOperation(booleanName, booleanExpression);
-            // check that the functions in operation exist in the brasp instance
-            functions = newBooleanOperation.functions;
-            for (let j = 0; j < functions.length; j++) {
-                if (!brasp.getOperations().map(operation => operation.name).includes(functions[j])) {
-                    alert(`Error: function ${functions[j]} not defined`);
-                    return;
-                }
-            }
-            brasp.addOperation(newBooleanOperation);
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-            addRow();
-
-            // sync the programInput box
-            const programInput = document.getElementById('programInput');
-            // for each operation, add operation.stringify() to the programInput
-            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-        }
-
-        function addAttentionOperation() {
-            const attentionName = document.getElementById('attention-name').value;
-            const attentionTie = document.getElementById('attention-tie').value;
-            const attentionMask = document.getElementById('attention-mask').value;
-            const scoreExpression = document.getElementById('score-expression').value;
-            const valueExpression = document.getElementById('value-expression').value;
-            const defaultExpression = document.getElementById('default-expression').value;
-            const newAttentionOperation = new AttentionOperation(attentionName, attentionTie, attentionMask, scoreExpression, valueExpression, defaultExpression);
-            // check that the functions in operation exist in the brasp instance
-            functions = newAttentionOperation.functions;
-            for (let j = 0; j < functions.length; j++) {
-                if (!brasp.getOperations().map(operation => operation.name).includes(functions[j])) {
-                    alert(`Error: function ${functions[j]} not defined`);
-                    return;
-                }
-            }
-            brasp.addOperation(newAttentionOperation);
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-            addRow();
-
-            // sync the programInput box
-            const programInput = document.getElementById('programInput');
-            // for each operation, add operation.stringify() to the programInput
-            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-        }
-
-        function clearOperations() {
-            for (let i = 0; i < brasp.getOperations().length; i++) {
-                removeRow();
-            }
-            brasp.clearOperations();
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
-
-            // sync the programInput box
-            const programInput = document.getElementById('programInput');
-            // for each operation, add operation.stringify() to the programInput
-            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-        }
-
-        const myGrammar = ohm.grammar(String.raw
-            `BRASP{
-
-            Operation
-            = BooleanOp
-            | AttentionOp
-            | InitialOp
-
-            BoolExp
-            = AndBool
-            | OrBool
-            | NotBool
-            | ParenBool
-            | FunBool
-            | Top
-            | Bot
-
-            AndBool = BoolExp "&" BoolExp
-
-            OrBool = BoolExp "|" BoolExp
-
-            NotBool = "not" BoolExp
-
-            Top = "1"
-
-            Bot = "0"
-
-            ParenBool = "(" BoolExp ")"
-
-            FunBool
-            = (lower | upper | digit | "_")+ "(i)"
-            | (lower | upper | digit | "_")+ "(j)"
-
-            InitialOp = "Q_" (letter|digit) "(i)"
-
-            BooleanOp = (lower | upper | digit | "_")+  "(i)" ":=" BoolExp
-
-            AttentionOp
-            = (lower | upper | digit | "_")+  "(i)" ":=" Tiebreaker "[" Mask "," Score "]" Value ":" DefaultExp
-
-            Tiebreaker
-            = "leftmost"
-            | "rightmost"
-
-            Mask
-            = "j<i"
-            | "i<j"
-            | "j<=i"
-            | "i<=j"
-            | "1"
-
-            Score = BoolExp
-
-            Value = BoolExp
-
-            DefaultExp
-            = AndBool
-            | OrBool
-            | NotBool
-            | ParenBool
-            | FunDefault
-            | Top
-            | Bot
-
-            AndDefault = DefaultExp "&" DefaultExp
-
-            OrDefault = DefaultExp "|" DefaultExp
-
-            NotDefault = "not" DefaultExp
-
-            ParenDefault = "(" DefaultExp ")"
-
-            FunDefault = (lower | upper | digit | "_")+  "(i)"
-            }`
-        );
-
-        const semantics = myGrammar.createSemantics().addOperation('eval', {
-            // BoolExp should just be a string
-
-            _iter(...children) {  // Correcting the semantic action
-                return children.map(child => child.eval());
-            },
-            _terminal() {  // Adding the semantic action for terminals
-                return this.sourceString;
-            },
-            letter(chars) {
-                return chars.eval();
-            },
-            lower(_) {
-                return this.sourceString;
-            },
-            upper(_) {
-                return this.sourceString;
-            },
-            BoolExp(exp) {
-                return this.sourceString;
-            },
-            DefaultExp(exp) {
-                return this.sourceString;
-            },
-            InitialOp(Q, letter, i) {
-                op = new InitialOperation(letter.eval());
-                return op;
-            },
-            BooleanOp(name, i, eq, expression) {
-                op = new BooleanOperation(name.eval().join(''), expression.eval());
-                return op;
-            },
-            AttentionOp(name, i, eq, tie, lbr, mask, com, score, rbr, value, col, defaultExp) {
-                op = new AttentionOperation(name.eval().join(''), tie.eval(), mask.eval(), score.eval(), value.eval(), defaultExp.eval());
-                return op;
-            },
-
-        });
-
-        function compileProgram() {
-            // remove all rows
-            for (let i = 0; i < brasp.getOperations().length; i++) {
-                removeRow();
-            }
-            // then, clear the operations
-            brasp.clearOperations();
-            // next get input
-            const programInput = document.getElementById('programInput');
-            // separate into lines
-            const lines = programInput.value.split('\n');
-            // for each line, parse the line and add the operation to the brasp instance
-            for (let i = 0; i < lines.length; i++) {
-                const match = myGrammar.match(lines[i]);
-                if (match.succeeded()) {
-                    const operation = semantics(match).eval();
-                    // check that the functions in operation exist in the brasp instance
-                    functions = operation.functions;
-                    for (let j = 0; j < functions.length; j++) {
-                        if (!brasp.getOperations().map(operation => operation.name).includes(functions[j])) {
-                            alert(`Error: function ${functions[j]} not defined`);
-                            return;
+                // iterate over the input
+                for (let i = 0; i < n; i++) {
+                    // first iterate over all j and calculate the score
+                    // use the localscope trick to evaluate the score expression
+                    // take care since some functions take i as input and some take j
+                    // replace f_j with f[j] and f_i with f[i]
+                    let scores = [];
+                    for (let j = 0; j < n; j++) {
+                        let localScope = {};
+                        for (let functionName in scope) {
+                            localScope[functionName + "_i"] = scope[functionName][i];
+                            localScope[functionName + "_j"] = scope[functionName][j];
+                        }
+                        // add j and i to the local scope
+                        localScope['i'] = i;
+                        localScope['j'] = j;
+                        let score = math.evaluate(score_expression, localScope);
+                        scores.push(score);
+                    }
+                    // check if all scores are 0
+                    let allZero = true;
+                    for (let score of scores) {
+                        if (score !== 0) {
+                            allZero = false;
                         }
                     }
-                    brasp.addOperation(operation);
-                    addRow();
+
+                    // if all scores are 0, use the default expression
+                    if (allZero) {
+                        let localScope = {};
+                        for (let functionName in scope) {
+                            localScope[functionName + "_i"] = scope[functionName][i];
+                        }
+                        localScope['i'] = i;
+                        let value = math.evaluate(default_expression, localScope);
+                        my_trace.push(value);
+                    }
+                    else {
+                        // if the tie is leftmost, let j be the leftmost index with a score of 1
+                        let j = i;
+                        if (tie === "leftmost") {
+                            for (let k = 0; k < n; k++) {
+                                if (scores[k] === 1) {
+                                    j = k;
+                                    break;
+                                }
+                            }
+                        }
+                        // if the tie is rightmost, let j be the rightmost index with a score of 1
+                        if (tie === "rightmost") {
+                            for (let k = n - 1; k >= 0; k--) {
+                                if (scores[k] === 1) {
+                                    j = k;
+                                    break;
+                                }
+                            }
+                        }
+                        let localScope = {};
+                        for (let functionName in scope) {
+                            localScope[functionName + "_i"] = scope[functionName][i];
+                            localScope[functionName + "_j"] = scope[functionName][j];
+                        }
+                        localScope['i'] = i;
+                        localScope['j'] = j;
+                        let value = math.evaluate(value_expression, localScope);
+                        my_trace.push(value);
+                    }
+                    trace[operation.name] = my_trace;
                 }
             }
-            // clear the programInput box
-            // then put the stringify of the operations in the programInput box
-            // this is to remove any extra spaces or newlines
-            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
-            // sync the grid
-            const inputBox = document.getElementById('inputBox');
-            syncGrid(inputBox);
         }
-    </script>
+        return trace;
+    }
+}
 
-</body>
 
-</html>
+class InitialOperation {
+    constructor(symbol) {
+        // check that symbol is a single character
+        if (symbol.length !== 1) {
+            throw new Error('Symbol must be a single character');
+        }
+        this.name = "Q_" + symbol;
+        this.symbol = symbol;
+        this.color = "#FFCCCC";
+        this.type = "initial";
+        this.functions = [];
+    }
+
+    stringify() {
+        return this.name + "(i)";
+    }
+
+    head() {
+        return this.name + "(i)";
+    }
+
+    body() {
+        return "";
+    }
+}
+
+class BooleanOperation {
+    constructor(name, expression) {
+        // check using math.js parser if the expression is valid
+        let variables = [];
+        let functions = [];
+
+        try {
+            let node = math.parse(expression);
+
+            node.traverse(function (node) {
+                if (node.isSymbolNode) {
+                    variables.push(node.name);
+                }
+                if (node.isFunctionNode) {
+                    functions.push(node.fn.name);
+                }
+            });
+            // make sure every variable in the expression is either i or a function name
+            for (let variable of variables) {
+                if (variable !== 'i' && !functions.includes(variable)) {
+                    throw new Error('Too many variables');
+                }
+            }
+        } catch (error) {
+            throw new Error('Invalid expression');
+        }
+        this.name = name;
+        this.expression = expression;
+        this.variables = variables;
+        this.functions = functions;
+        this.color = "#C6EFFC";
+        this.type = "boolean";
+    }
+
+    stringify() {
+        // replace "not" with "!"
+        let expression = this.expression.replace(/not /g, "!");
+        return this.name + "(i) := " + expression;
+    }
+
+    head() {
+        return this.name + "(i)";
+    }
+
+    body() {
+        let expression = this.expression.replace(/not /g, "!");
+        return expression;
+    }
+}
+
+class AttentionOperation {
+    constructor(name, tie, mask, score_expression, value_expression, default_expression) {
+        this.name = name;
+        // tie must be "leftmost" or "rightmost"
+        if (tie !== "leftmost" && tie !== "rightmost") {
+            throw new Error('Invalid tie');
+        }
+        this.tie = tie;
+        // mask must be "j<i" or "i<j" or "j<=i" or "i<=j" or "1"
+        if (mask !== "j<i" && mask !== "i<j" && mask !== "j<=i" && mask !== "i<=j" && mask !== "1") {
+            throw new Error('Invalid mask');
+        }
+        this.mask = mask;
+        // check using math.js parser if the expression is valid
+        let score_variables = [];
+        let score_functions = [];
+        try {
+            let node = math.parse(score_expression);
+            node.traverse(function (node) {
+                if (node.isSymbolNode) {
+                    score_variables.push(node.name);
+                }
+                if (node.isFunctionNode) {
+                    score_functions.push(node.fn.name);
+                }
+            });
+            // the score expression cannot contain variables other than i and j and the functions
+            for (let variable of score_variables) {
+                if (variable !== 'i' && variable !== 'j' && !score_functions.includes(variable)) {
+                    throw new Error('Too many variables');
+                }
+            }
+
+        } catch (error) {
+            throw new Error('Invalid score expression');
+        }
+
+        // check using math.js parser if the value expression is valid
+        let value_variables = [];
+        let value_functions = [];
+
+        try {
+            let node = math.parse(value_expression);
+
+            node.traverse(function (node) {
+                if (node.isSymbolNode) {
+                    value_variables.push(node.name);
+                }
+                if (node.isFunctionNode) {
+                    value_functions.push(node.fn.name);
+                }
+            });
+            // the value expression cannot contain variables other than i and j and the functions
+            for (let variable of value_variables) {
+                if (variable !== 'i' && variable !== 'j' && !value_functions.includes(variable)) {
+                    throw new Error('Too many variables');
+                }
+            }
+        } catch (error) {
+            throw new Error('Invalid value expression');
+        }
+        // check using math.js parser if the default expression is valid
+        let default_variables = [];
+        let default_functions = [];
+        try {
+            let node = math.parse(default_expression);
+
+            node.traverse(function (node) {
+                if (node.isSymbolNode) {
+                    default_variables.push(node.name);
+                }
+                if (node.isFunctionNode) {
+                    default_functions.push(node.fn.name);
+                }
+            });
+            // the default expression cannot contain variables other than i and the functions
+            for (let variable of default_variables) {
+                if (variable !== 'i' && !default_functions.includes(variable)) {
+                    throw new Error('Too many variables');
+                }
+            }
+        } catch (error) {
+            throw new Error('Invalid default expression');
+        }
+        this.score_expression = score_expression;
+        this.score_variables = score_variables;
+        this.score_functions = score_functions;
+
+        this.value_expression = value_expression;
+        this.value_variables = value_variables;
+        this.value_functions = value_functions;
+
+        this.default_expression = default_expression;
+        this.default_variables = default_variables;
+        this.default_functions = default_functions;
+
+        this.functions = score_functions.concat(value_functions).concat(default_functions);
+        this.color = "#ffe6cc";
+
+        this.type = "attention";
+    }
+
+    stringify() {
+        let score_expression = this.score_expression.replace(/not /g, "!");
+        let value_expression = this.value_expression.replace(/not /g, "!");
+        let default_expression = this.default_expression.replace(/not /g, "!");
+        return this.name + "(i) := " + this.tie + " [" + this.mask + ", " + score_expression + "] " + value_expression + " : " + default_expression;
+    }
+
+    head() {
+        return this.name + "(i)";
+    }
+
+    body() {
+        let score_expression = this.score_expression.replace(/not /g, "!");
+        let value_expression = this.value_expression.replace(/not /g, "!");
+        let default_expression = this.default_expression.replace(/not /g, "!");
+        return this.tie + " [" + this.mask + ", " + score_expression + "] " + value_expression + " : " + default_expression;
+    }
+}
