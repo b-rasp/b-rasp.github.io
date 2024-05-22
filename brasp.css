@@ -25,6 +25,38 @@
     --num-rows: 3;
 }
 
+.panels-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    /* adjust as needed */
+    align-items: flex-start;
+    /* add this line */
+}
+
+@media screen and (max-width: 1200px) {
+    .panels-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.responsive-trace {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    transform-origin: top left;
+    width: 100%;
+    /* add this line */
+    max-width: 100vw;
+    /* add this line */
+}
+
+@media screen and (max-width: 600px) {
+    .responsive-trace {
+        flex-direction: column;
+    }
+}
+
 .grid-container {
     display: grid;
     gap: 0;
