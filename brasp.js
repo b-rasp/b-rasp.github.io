@@ -201,7 +201,6 @@ class InitialOperation {
         }
         this.name = "Q_" + symbol;
         this.symbol = symbol;
-        this.color = "#FFCCCC";
         this.type = "initial";
         this.functions = [];
     }
@@ -249,7 +248,6 @@ class BooleanOperation {
         this.expression = expression;
         this.variables = variables;
         this.functions = functions;
-        this.color = "#C6EFFC";
         this.type = "boolean";
     }
 
@@ -366,7 +364,6 @@ class AttentionOperation {
         this.default_functions = default_functions;
 
         this.functions = score_functions.concat(value_functions).concat(default_functions);
-        this.color = "#ffe6cc";
 
         this.type = "attention";
     }
