@@ -87,8 +87,8 @@ class BRASP {
                     let result = math.evaluate(expression, localScope);
                     my_trace.push(result);
                 }
-                // make sure true and false are represented as 1 and 0
-                my_trace = my_trace.map(x => x === true ? 1 : 0);
+                // if trace is true/false, turn it into 1/0
+                my_trace = my_trace.map(x => x === true ? 1 : x).map(x => x === false ? 0 : x);
                 trace[operation.name] = my_trace;
             }
             if (operation instanceof AttentionOperation) {
