@@ -57,6 +57,8 @@
                             <li><a class="dropdown-item" href="#" onclick="add_ab_plus()">(ab)^+</a></li>
                             <li><a class="dropdown-item" href="#" onclick="addBprecAnosuccC()">{a,b,c}^*a{b,c}^*ba^*</a>
                             </li>
+                            <li><a class="dropdown-item" href="#" onclick="addRetrieval()">Retrieval Task</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="addInductionHead()">Induction Heads</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -101,7 +103,7 @@
                     <div class="panel">
                         <h2>Add operation</h2>
                         <div class="subpanel">
-                            <h3>Initial operation</h3>
+                            <h4>Initial operation</h4>
                             <!-- <label for=" initial-symbol">Symbol:</label> -->
                             Q_<input type="text" id="initial-symbol" style="width: 20px;">(i)
                             <p>
@@ -111,7 +113,7 @@
                             </p>
                         </div>
                         <div class="subpanel">
-                            <h3>Boolean operation </h3>
+                            <h4>Boolean operation </h4>
                             <!-- <label for="boolean-name">Name:</label> -->
                             <input type="text" id="boolean-name" style="width: 20px;">(i) :=
                             <!-- <label for="boolean-expression">Expression:</label> -->
@@ -123,7 +125,7 @@
                             </p>
                         </div>
                         <div class="subpanel">
-                            <h3>Attention operation</h3>
+                            <h4>Attention operation</h4>
                             <!-- <label for="attention-name">Name:</label> -->
                             <input type="text" id="attention-name" style="width: 20px;">(i) :=
                             <!-- <label for="attention-tie">Tie:</label> -->
@@ -140,11 +142,11 @@
                                 <option value="1">1</option>
                             </select>,
                             <!-- <label for="score-expression">Score:</label> -->
-                            <input type="text" id="score-expression" style="width: 100px;">]
+                            <input type="text" id="score-expression" style="width: 90px;">]
                             <!-- <label for="value-expression">Value:</label> -->
-                            <input type="text" id="value-expression" style="width: 100px;"> :
+                            <input type="text" id="value-expression" style="width: 90px;"> :
                             <!-- <label for="default-expression">Default:</label> -->
-                            <input type="text" id="default-expression" style="width: 100px;">
+                            <input type="text" id="default-expression" style="width: 90px;">
                             <p>
                             <p>
                                 <button onclick="addAttentionOperation()">Add</button>
@@ -155,17 +157,21 @@
                 </div>
             </div>
         </div>
-        <div style="align-items:center;" class="responsive-trace" id="trace">
-            <div style="display: flex; flex-direction: row; align-items:center;">
-                <div style=" display: flex; flex-direction: row; align-items: center;">
-                    <div style="display: flex; flex-direction: row; align-items: center;">
-                        <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="margin:auto;width:100%;height:100%;">
+            <div style="justify-content: center; " id="trace">
+                <div style="display: flex; flex-direction: row; align-items: center; width:100%;">
+                    <div style="display: flex; flex-direction: row; align-items: center; width:8%;">
+                        <div style="display: flex; flex-direction: column; align-items: center; width:100%;">
                             <div class="grid-container remove-column" id="editContainer"></div>
                         </div>
-                        <div style="display: flex; flex-direction: column; align-items: center;">
+                    </div>
+                    <div style="display: flex; flex-direction: row; align-items: center; width:42%;">
+                        <div style="display: flex; flex-direction: column; align-items: center; width:100%;">
                             <div class="grid-container operation-column" id="programContainer"></div>
                         </div>
-                        <div style="display: flex; flex-direction: column; align-items: center;">
+                    </div>
+                    <div style="display: flex; flex-direction: row; align-items: center; width:50%;">
+                        <div style="display: flex; flex-direction: column; align-items: center; width:100%;">
                             <div class="grid-container vector-column" id="gridContainer"></div>
                         </div>
                     </div>
@@ -290,20 +296,76 @@
             programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
         }
 
-        function loadPreset() {
-            const preset = document.getElementById('presets').value;
-            if (preset === 'dyck') {
-                addDyck1_depth2();
-            }
-            if (preset === 'stair3') {
-                addStair3();
-            }
-            if (preset === 'ab_plus') {
-                add_ab_plus();
-            }
-            if (preset === 'BprecAnosuccC') {
-                addBprecAnosuccC();
-            }
+        function addInductionHead() {
+            clearOperations();
+
+            brasp.addOperation(new InitialOperation("a"));
+            addRow();
+            brasp.addOperation(new InitialOperation("b"));
+            addRow();
+            brasp.addOperation(new InitialOperation("c"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("PREV_a", "rightmost", "j<i", "1", "Q_a(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("PREV_b", "rightmost", "j<i", "1", "Q_b(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("PREV_c", "rightmost", "j<i", "1", "Q_c(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("PREDICT_a", "rightmost", "j<i", "(Q_a(i) & PREV_a(j)) | (Q_b(i) & PREV_b(j)) | (Q_c(i) & PREV_c(j))", "Q_a(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("PREDICT_b", "rightmost", "j<i", "(Q_a(i) & PREV_a(j)) | (Q_b(i) & PREV_b(j)) | (Q_c(i) & PREV_c(j))", "Q_b(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("PREDICT_c", "rightmost", "j<i", "(Q_a(i) & PREV_a(j)) | (Q_b(i) & PREV_b(j)) | (Q_c(i) & PREV_c(j))", "Q_c(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("Y", "rightmost", "j<i", "1", "(PREDICT_a(j) & Q_a(i)) | (PREDICT_b(j) & Q_b(i)) | (PREDICT_c(j) & Q_c(i))", "0"));
+            addRow();
+
+            // sync the grid
+            const inputBox = document.getElementById('inputBox');
+            syncGrid(inputBox);
+            // sync the programInput box
+            const programInput = document.getElementById('programInput');
+            // for each operation, add operation.stringify() to the programInput
+            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
+        }
+
+        function addRetrieval() {
+            clearOperations();
+            // add the initial operations
+            brasp.addOperation(new InitialOperation("a"));
+            addRow();
+            brasp.addOperation(new InitialOperation("b"));
+            addRow();
+            brasp.addOperation(new InitialOperation("c"));
+            addRow();
+            brasp.addOperation(new InitialOperation("1"));
+            addRow();
+            brasp.addOperation(new InitialOperation("2"));
+            addRow();
+            brasp.addOperation(new InitialOperation("3"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("P_a", "rightmost", "j<i", "1", "Q_a(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("P_b", "rightmost", "j<i", "1", "Q_b(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("P_c", "rightmost", "j<i", "1", "Q_c(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("Y_1", "rightmost", "j<i", "(P_a(i) & P_a(j)) | (P_b(i) & P_b(j)) | (P_c(i) & P_c(j))", "Q_1(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("Y_2", "rightmost", "j<i", "(P_a(i) & P_a(j)) | (P_b(i) & P_b(j)) | (P_c(i) & P_c(j))", "Q_2(j)", "0"));
+            addRow();
+            brasp.addOperation(new AttentionOperation("Y_3", "rightmost", "j<i", "(P_a(i) & P_a(j)) | (P_b(i) & P_b(j)) | (P_c(i) & P_c(j))", "Q_3(j)", "0"));
+            addRow();
+            brasp.addOperation(new BooleanOperation("Y_?", "(P_a(i) | P_b(i) | P_c(i)) & not (Y_1(i) | Y_2(i) | Y_3(i))"));
+            addRow();
+
+            // sync the grid
+            const inputBox = document.getElementById('inputBox');
+            syncGrid(inputBox);
+            // sync the programInput box
+            const programInput = document.getElementById('programInput');
+            // for each operation, add operation.stringify() to the programInput
+            programInput.value = brasp.getOperations().map(operation => operation.stringify()).join('\n');
         }
 
         function syncGrid(input) {
@@ -320,7 +382,8 @@
                 if (j === 0) {
                     newItem.classList.add('remove-header');
                     const clearButton = document.createElement('button');
-                    clearButton.textContent = 'Clear All';
+                    clearButton.textContent = 'Clear';
+                    clearButton.style.width = '100%';
                     clearButton.onclick = function () {
                         clearOperations();
                     };
@@ -477,6 +540,10 @@
                     document.getElementById('recognition').style.color = 'red';
                 }
             }
+            else {
+                document.getElementById('recognition').innerHTML = 'rejected';
+                document.getElementById('recognition').style.color = 'red';
+            }
         }
 
         function addRow() {
@@ -609,15 +676,15 @@
         ParenBool = "(" BoolExp ")"
 
         FunBool
-        = (lower | upper | digit | "_")+ "(i)"
-        | (lower | upper | digit | "_")+ "(j)"
+        = (lower | upper | digit | "?" | "_")+ "(i)"
+        | (lower | upper | digit | "?" | "_")+ "(j)"
 
-        InitialOp = "Q_" (letter|digit) "(i)"
+        InitialOp = "Q_" (letter|digit|"?") "(i)"
 
-        BooleanOp = (lower | upper | digit | "_")+  "(i)" ":=" BoolExp
+        BooleanOp = (lower | upper | digit | "?" | "_")+  "(i)" ":=" BoolExp
 
         AttentionOp
-        = (lower | upper | digit | "_")+  "(i)" ":=" Tiebreaker "[" Mask "," Score "]" Value ":" DefaultExp
+        = (lower | upper | digit | "?" | "_")+  "(i)" ":=" Tiebreaker "[" Mask "," Score "]" Value ":" DefaultExp
 
         Tiebreaker
         = "leftmost"
@@ -651,7 +718,7 @@
 
         ParenDefault = "(" DefaultExp ")"
 
-        FunDefault = (lower | upper | digit | "_")+  "(i)"
+        FunDefault = (lower | upper | digit | "?"  | "_")+  "(i)"
         }`
         );
 
@@ -757,6 +824,10 @@
                     brasp.addOperation(operation);
                     addRow();
                 }
+                else {
+                    alert(`Error: syntax error in line ${i + 1}`);
+                    return;
+                }
             }
             // clear the programInput box
             // then put the stringify of the operations in the programInput box
@@ -766,6 +837,7 @@
             const inputBox = document.getElementById('inputBox');
             syncGrid(inputBox);
         }
+
     </script>
 
 
